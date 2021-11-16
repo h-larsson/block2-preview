@@ -509,6 +509,28 @@ template <> struct GMatrixFunctions<complex<double>> {
               &inc);
         return r;
     }
+
+    // Computes norm more accurately
+    static double norm_accurate(const ComplexMatrixRef &a) __attribute__((optimize("-O0"))){
+        MKL_INT n = a.m * a.n;
+        complex<long double> out = 0.0;
+        complex<long double> compensate = 0.0;
+        for(MKL_INT ii = 0; ii < n; ++ii){
+            complex<long double> sumi = a.data[ii];
+            sumi *= conj(a.data[ii]);
+            // Kahan summation
+            auto y = sumi - compensate;
+            // somehow, volatile keyword leads to compile error. so just hope the compiler does not optimize this away..
+            const complex<long double> t = out + y;
+            const complex<long double> z = t - out;
+            compensate = z - y;
+            out = t;
+        }
+        out = sqrt(out);
+        volatile long double outd = real(out);
+        return static_cast<double>(outd);
+    }
+
     template <typename T1, typename T2>
     static bool all_close(const T1 &a, const T2 &b, double atol = 1E-8,
                           double rtol = 1E-5, complex<double> scale = 1.0) {
@@ -519,6 +541,8 @@ template <> struct GMatrixFunctions<complex<double>> {
                     return false;
         return true;
     }
+
+
     // dot product (a ^ T, b)
     static complex<double> dot(const ComplexMatrixRef &a,
                                const ComplexMatrixRef &b) {

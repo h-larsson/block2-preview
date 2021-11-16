@@ -197,6 +197,26 @@ template <> struct GMatrixFunctions<double> {
         MKL_INT n = a.m * a.n, inc = 1;
         return dnrm2(&n, a.data, &inc);
     }
+    // Computes norm more accurately
+    static double norm_accurate(const MatrixRef &a) __attribute__((optimize("-O0"))){
+        MKL_INT n = a.m * a.n;
+        long double out = 0.0;
+        long double compensate = 0.0;
+        for(MKL_INT ii = 0; ii < n; ++ii){
+            long double sumi = a.data[ii];
+            sumi *= a.data[ii];
+            // Kahan summation
+            auto y = sumi - compensate;
+            // somehow, volatile keyword leads to compile error. so just hope the compiler does not optimize this away..
+            const long double t = out + y;
+            const long double z = t - out;
+            compensate = z - y;
+            out = t;
+        }
+        out = sqrt(out);
+        volatile long double outd = real(out);
+        return static_cast<double>(outd);
+    }
     // determinant
     static double det(const MatrixRef &a) {
         assert(a.m == a.n);
