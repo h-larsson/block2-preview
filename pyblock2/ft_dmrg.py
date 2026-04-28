@@ -182,7 +182,7 @@ def _init(SpinLabel):
             self.hamil = HamiltonianQC(
                 vacuum, self.n_physical_sites, self.orb_sym, self.fcidump)
 
-        def init_hamiltonian(self, n_elec: int, twos: int, isym: int, orb_sym: List[int],
+        def init_hamiltonian(self, pointgroup:str, n_elec: int, twos: int, isym: int, orb_sym: List[int],
                              e_core: float, h1e: np.ndarray, g2e: np.ndarray, tol=1E-13, idx=None,
                              save_fcidump=None):
             """ Initialize fcidump based on integrals
